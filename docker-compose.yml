@@ -20,14 +20,20 @@ services:
     networks:
       - monitoring
 
-  pushgateway:
-    image: prom/pushgateway:latest
-    container_name: pushgateway
+  metrics-server:
+    build: .
+    container_name: metrics-server
     restart: unless-stopped
     ports:
-      - "9091:9091"
+      - "8080:8080"
     networks:
       - monitoring
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./metrics_server.py:/app/metrics_server.py
+    working_dir: /app
+    command: python3 metrics_server.py --host 0.0.0.0 --port 8080
 
   grafana:
     image: grafana/grafana:latest

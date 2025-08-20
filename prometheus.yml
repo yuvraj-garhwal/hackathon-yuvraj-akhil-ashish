@@ -11,9 +11,9 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-  - job_name: 'pushgateway'
+  - job_name: 'metrics-server'
     static_configs:
-      - targets: ['pushgateway:9091']
+      - targets: ['metrics-server:8080']
     scrape_interval: 1s
     metrics_path: /metrics
     honor_labels: true
