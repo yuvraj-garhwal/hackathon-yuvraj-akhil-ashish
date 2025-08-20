@@ -1,215 +1,328 @@
-# CPU Usage Monitor - Prometheus & Grafana PoC
+# 🚀 Device Monitoring System
 
-This project monitors the CPU usage of the top 10 applications on your system in real-time, exports the metrics to Prometheus, and visualizes them in Grafana dashboards.
+A comprehensive system for monitoring CPU, Memory, and Network metrics from multiple devices using a custom HTTP metrics server, Prometheus, and Grafana.
 
-## Features
-
-- **Real-time monitoring**: Updates every second
-- **Top 10 applications**: Tracks the highest CPU-consuming processes
-- **Prometheus metrics**: Exports CPU and memory usage metrics
-- **Grafana visualization**: Beautiful dashboards with multiple chart types
-- **Containerized**: Easy deployment with Docker Compose
-
-## Architecture
+## 🏗️ Architecture
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Python Script │───▶│   Prometheus    │───▶│     Grafana     │
-│  (cpu_monitor)  │    │    (Port 9090)  │    │   (Port 3000)   │
-│   Port 8000     │    │                 │    │                 │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Device Script │───▶│ Metrics Server  │───▶│   Prometheus    │───▶│     Grafana     │
+│  (Port: Client) │    │   (Port: 8080)  │    │   (Port: 9090)  │    │   (Port: 3000)  │
+└─────────────────┘    └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
-## Prerequisites
+### Components
 
-- Docker and Docker Compose
-- Python 3.7+
-- macOS/Linux system
+- **Device Script**: Collects metrics from devices and pushes to metrics server
+- **Metrics Server**: Custom HTTP server that receives and aggregates metrics
+- **Prometheus**: Scrapes metrics from the metrics server for time-series storage
+- **Grafana**: Visualizes metrics with comprehensive dashboards
 
-## Quick Start
-
-### 1. Clone and Navigate
-
-```bash
-cd /Users/yuvraj/Desktop/hackathon
-```
-
-### 2. Install Python Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 3. Start the Services
-
-```bash
-# Start Prometheus and Grafana containers
-docker-compose up -d
-
-# Wait for containers to be ready (30 seconds)
-sleep 30
-```
-
-### 4. Start CPU Monitoring
-
-```bash
-# Run the CPU monitor script
-python cpu_monitor.py
-```
-
-### 5. Access the Dashboards
-
-- **Grafana**: http://localhost:3000
-  - Username: `admin`
-  - Password: `admin`
-- **Prometheus**: http://localhost:9090
-- **Metrics endpoint**: http://localhost:8000/metrics
-
-## Dashboard Features
-
-The Grafana dashboard includes:
-
-1. **Real-time CPU Usage Chart**: Line chart showing CPU usage over time
-2. **System Total CPU Gauge**: Current total system CPU usage
-3. **CPU Distribution Pie Chart**: Visual distribution of CPU usage
-4. **Memory Usage Chart**: Memory consumption by applications
-5. **Current CPU Usage Bar Chart**: Instant view of current usage
-
-## Metrics Available
-
-### Application Metrics
-- `app_cpu_usage_percent`: CPU usage percentage by application
-- `app_memory_usage_mb`: Memory usage in MB by application
-
-### System Metrics
-- `system_total_cpu_percent`: Total system CPU usage
-- `system_info`: System information (platform, CPU count, memory)
-
-## Configuration
-
-### Monitoring Interval
-To change the monitoring interval, modify the `cpu_monitor.py` script:
-
-```python
-monitor.start_monitoring(port=8000, interval=1)  # Change interval here
-```
-
-### Number of Top Applications
-To monitor more or fewer applications:
-
-```python
-monitor = CPUMonitor(top_n=10)  # Change top_n here
-```
-
-### Prometheus Scrape Interval
-Edit `prometheus.yml`:
-
-```yaml
-scrape_configs:
-  - job_name: 'cpu-monitor'
-    scrape_interval: 1s  # Change interval here
-```
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Port conflicts**: Ensure ports 3000, 8000, and 9090 are free
-2. **Permission issues**: Run with appropriate permissions for process monitoring
-3. **Docker issues**: Ensure Docker is running and accessible
-
-### Checking Services
-
-```bash
-# Check if containers are running
-docker-compose ps
-
-# Check container logs
-docker-compose logs prometheus
-docker-compose logs grafana
-
-# Check Python script logs
-# The script outputs logs to console
-```
-
-### Restarting Services
-
-```bash
-# Restart all services
-docker-compose down
-docker-compose up -d
-
-# Restart just one service
-docker-compose restart prometheus
-docker-compose restart grafana
-```
-
-## Development
-
-### Project Structure
+## 📂 Project Structure
 
 ```
 hackathon/
-├── cpu_monitor.py              # Main monitoring script
-├── requirements.txt            # Python dependencies
-├── docker-compose.yml          # Docker services
+├── device-scripts/
+│   └── device_monitor.py       # Device monitoring script
+├── docker-compose.yml          # Docker services configuration
+├── Dockerfile                  # Custom metrics server container
 ├── prometheus.yml              # Prometheus configuration
-├── grafana/
-│   ├── provisioning/
-│   │   ├── datasources/
-│   │   │   └── datasource.yml  # Grafana datasource config
-│   │   └── dashboards/
-│   │       └── dashboard.yml   # Dashboard provisioning
-│   └── dashboards/
-│       └── cpu-dashboard.json  # Dashboard definition
+├── metrics_server.py           # Custom HTTP metrics server
+├── enhanced-dashboard.json     # Grafana dashboard with network metrics
+├── requirements.txt            # Python dependencies
 └── README.md                   # This file
 ```
 
-### Adding Custom Metrics
+## 🚀 Quick Start
 
-To add new metrics, modify `cpu_monitor.py`:
-
-```python
-# Add new Prometheus gauge
-new_metric = Gauge('new_metric_name', 'Description', ['label1', 'label2'])
-
-# Update in the monitoring loop
-new_metric.labels(label1='value1', label2='value2').set(metric_value)
-```
-
-### Customizing Dashboards
-
-1. Access Grafana at http://localhost:3000
-2. Edit the existing dashboard or create new ones
-3. Export the dashboard JSON
-4. Replace the content in `grafana/dashboards/cpu-dashboard.json`
-
-## Performance Considerations
-
-- The script uses minimal CPU overhead (typically <1%)
-- Memory usage is low (~10-20 MB)
-- Network traffic is minimal for metrics export
-- Data retention in Prometheus is set to 200 hours
-
-## Security Notes
-
-- Default Grafana credentials are admin/admin - change in production
-- Prometheus metrics are exposed without authentication
-- Consider firewall rules for production deployments
-
-## Stopping the System
+### 1. Start the Infrastructure
 
 ```bash
-# Stop the Python script
-# Press Ctrl+C in the terminal running cpu_monitor.py
+# Start all services (Prometheus, Grafana, Metrics Server)
+docker-compose up -d
 
-# Stop Docker containers
+# Wait for services to be ready
+sleep 30
+```
+
+### 2. Start Device Monitoring
+
+```bash
+# Install dependencies for device script
+cd device-scripts
+pip install -r ../requirements.txt
+
+# Start monitoring (basic usage)
+python3 device_monitor.py
+
+# Advanced usage with custom intervals
+python3 device_monitor.py \
+  --server-url http://localhost:8080 \
+  --collect-interval 1.0 \
+  --push-interval 10.0 \
+  --aggregation last \
+  --top-n 10
+```
+
+### 3. Access Dashboards
+
+- **Grafana**: http://localhost:3000 (admin/admin)
+- **Prometheus**: http://localhost:9090
+- **Metrics Server**: http://localhost:8080/status
+
+### 4. Import Dashboard
+
+1. Go to Grafana → **"+"** → **"Import"**
+2. Copy contents of `enhanced-dashboard.json`
+3. Paste → **"Load"** → **"Import"**
+4. Select your device from the dropdown
+
+## ⚙️ Configuration
+
+### Device Monitor Options
+
+```bash
+python3 device_monitor.py --help
+
+Options:
+  --server-url URL          Metrics server URL (default: http://localhost:8080)
+  --collect-interval FLOAT  Collection interval in seconds (default: 1.0)
+  --push-interval FLOAT     Push interval in seconds (default: 10.0)  
+  --aggregation METHOD      Aggregation method: last|avg|max|min (default: last)
+  --top-n INT              Number of top processes (default: 10)
+  --job NAME               Job name for metrics (default: device-metrics)
+  --device-serial ID       Override device serial number
+  --debug                  Enable debug logging
+```
+
+### Metrics Server Options
+
+```bash
+python3 metrics_server.py --help
+
+Options:
+  --host HOST       Server host (default: 0.0.0.0)
+  --port PORT       Server port (default: 8080)
+  --ttl SECONDS     Metric TTL in seconds (default: 300)
+  --debug           Enable debug logging
+```
+
+## 📊 Available Metrics
+
+### Application Metrics
+- `app_cpu_usage_percent`: CPU usage by application (normalized by CPU count)
+- `app_memory_usage_mb`: Memory usage in MB by application  
+- `app_network_usage_mbps`: Network usage in Mbps by application (sent/received)
+
+### System Metrics
+- `total_cpu_usage_percent`: Total system CPU usage
+- `total_memory_usage_percent`: Total system memory usage
+- `total_network_usage_mbps`: Total system network usage (sent/received)
+- `system_info_info`: System information (platform, CPU count, hostname)
+
+### Labels
+- `device_serial`: Unique device identifier
+- `app_name`: Application name
+- `job`: Metrics job name
+- `direction`: Network direction (sent/received)
+- `platform`: Operating system
+- `cpu_count`: Number of CPU cores
+- `hostname`: Device hostname
+
+## 🌐 Multi-Device Deployment
+
+### Local Network Setup
+
+```bash
+# Start infrastructure on monitoring server
+docker-compose up -d
+
+# Device 1
+python3 device_monitor.py --server-url http://192.168.1.100:8080 --job device1
+
+# Device 2  
+python3 device_monitor.py --server-url http://192.168.1.100:8080 --job device2
+
+# Device 3
+python3 device_monitor.py --server-url http://192.168.1.100:8080 --job device3
+```
+
+### Remote/Cloud Deployment
+
+```bash
+# Devices push to cloud metrics server
+python3 device_monitor.py --server-url https://monitoring.yourcompany.com:8080
+```
+
+## 🔧 API Endpoints
+
+### Metrics Server
+
+- **POST `/metrics`**: Ingest metrics from devices
+- **GET `/metrics`**: Prometheus scrape endpoint  
+- **GET `/health`**: Health check
+- **GET `/status`**: Detailed status information
+- **GET `/device-replacement/{device_serial}`**: Check if device needs replacement based on CPU/Memory thresholds
+
+### Sample POST Request
+
+```json
+{
+  "device_serial": "GWHV4X1Y4L",
+  "job": "device-metrics",
+  "metrics": [
+    {
+      "name": "app_cpu_usage_percent",
+      "value": 15.5,
+      "labels": {
+        "app_name": "Google Chrome",
+        "device_serial": "GWHV4X1Y4L"
+      },
+      "help": "CPU usage percentage by application",
+      "type": "gauge"
+    }
+  ]
+}
+```
+
+### Device Replacement Check Endpoint
+
+**GET `/device-replacement/{device_serial}`**
+
+Analyzes device performance metrics to determine if replacement is recommended.
+
+#### Usage:
+```bash
+curl http://localhost:8080/device-replacement/GWHV4X1Y4L
+```
+
+#### Response:
+```json
+{
+  "replace_device": false,
+  "device_serial": "GWHV4X1Y4L",
+  "timestamp": "2025-08-20T08:45:05.253597",
+  "analysis_window_minutes": 10,
+  "thresholds": {
+    "cpu_high": 80.0,
+    "cpu_low": 5.0,
+    "memory_high": 85.0,
+    "memory_low": 10.0
+  },
+  "metrics": {
+    "avg_cpu": 19.7,
+    "avg_memory": 75.0
+  },
+  "reasons": []
+}
+```
+
+#### Key Response Fields:
+- **`replace_device`**: Boolean indicating if device replacement is recommended
+- **`thresholds`**: Configurable thresholds used for analysis
+- **`metrics`**: Average CPU and memory usage over analysis window
+- **`reasons`**: List of reasons if replacement is recommended
+
+#### Replacement Triggers:
+- **High CPU**: Average > 80% over 10 minutes
+- **Low CPU**: Average < 5% over 10 minutes (potential hardware issues)
+- **High Memory**: Average > 85% over 10 minutes  
+- **Low Memory**: Average < 10% over 10 minutes (potential issues)
+
+#### Configuration:
+Thresholds and time windows can be tuned in `metrics_server.py`:
+```python
+# Tunable parameters (lines 236-241)
+CPU_HIGH_THRESHOLD = 80.0      # High CPU threshold (%)
+CPU_LOW_THRESHOLD = 5.0        # Low CPU threshold (%)
+MEMORY_HIGH_THRESHOLD = 85.0   # High memory threshold (%)
+MEMORY_LOW_THRESHOLD = 10.0    # Low memory threshold (%)
+TIME_WINDOW_MINUTES = 10       # Analysis time window (minutes)
+```
+
+## 📈 Dashboard Features
+
+The enhanced dashboard includes:
+
+### Real-time Gauges
+- Total CPU usage (0-100%)
+- Total memory usage (0-100%)  
+- Network sent/received (bps)
+
+### Time Series Charts
+- Top 10 apps CPU usage over time
+- Top 10 apps memory usage over time
+- Top 10 apps network usage (sent/received)
+- Total network traffic timeline
+
+### Distribution Charts
+- CPU usage pie chart
+- Memory usage pie chart  
+- Network usage pie chart
+- Current usage bar charts
+
+### Interactive Features
+- Device serial dropdown for multi-device filtering
+- Real-time updates (1-second refresh)
+- Color-coded network directions (red=sent, blue=received)
+- Auto-scaling units (K/M/G prefixes)
+
+## 🔍 Troubleshooting
+
+### Check Service Status
+
+```bash
+# Check all containers
+docker-compose ps
+
+# Check logs
+docker-compose logs metrics-server
+docker-compose logs prometheus
+docker-compose logs grafana
+
+# Check metrics server health
+curl http://localhost:8080/health
+curl http://localhost:8080/status
+```
+
+### Common Issues
+
+1. **Port conflicts**: Ensure ports 3000, 8080, 9090 are free
+2. **Device script errors**: Check network connectivity to metrics server
+3. **No metrics in Grafana**: Verify Prometheus is scraping metrics server
+4. **Dashboard not working**: Import `enhanced-dashboard.json` manually
+
+### Restart Services
+
+```bash
+# Restart all services
+docker-compose down && docker-compose up -d
+
+# Restart specific service
+docker-compose restart metrics-server
+docker-compose restart prometheus
+```
+
+## 🔒 Security Considerations
+
+- Default Grafana credentials: admin/admin (change in production)
+- Metrics server has no authentication (add reverse proxy with auth for production)
+- Consider firewall rules for production deployments
+- Use HTTPS for remote deployments
+
+## 🚦 Stopping the System
+
+```bash
+# Stop device monitoring
+# Press Ctrl+C in device monitor terminal
+
+# Stop infrastructure
 docker-compose down
 
-# Remove volumes (optional - deletes all data)
+# Remove all data (optional)
 docker-compose down -v
 ```
 
-## License
+## 📝 License
 
 This project is for educational/PoC purposes.
